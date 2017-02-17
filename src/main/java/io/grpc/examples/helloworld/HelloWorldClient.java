@@ -38,7 +38,14 @@ import io.grpc.StatusRuntimeException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
  */
@@ -83,6 +90,29 @@ public class HelloWorldClient {
     }
     logger.info("Greeting: " + response.getMessage());
   }
+  
+  /** Say hello to server. */
+  public void send(String message) {
+    //logger.info("Will try to greet " + name + " ...");
+    HelloRequest request = HelloRequest.newBuilder().setMessage(message).build();
+    HelloReply response;
+    try {
+      response = blockingStub.sendMessage(request);
+    } catch (StatusRuntimeException e) {
+      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      return;
+    }
+    logger.info("Server > " + response.getMessage());
+    
+    //try {
+    //  response = blockingStub.sayHelloAgain(request);
+    //}   catch (StatusRuntimeException e) {
+    //  logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+    //  return;
+    //}
+    //logger.info("Greeting: " + response.getMessage());
+  }
+  
   /**
    * Greet server. If provided, the first element of {@code args} is the name to use in the
    * greeting.
@@ -91,11 +121,17 @@ public class HelloWorldClient {
     HelloWorldClient client = new HelloWorldClient("localhost", 50051);
     try {
       /* Access a service running on the local machine on port 50051 */
-      String user = "world";
+      String user = "USER";
       if (args.length > 0) {
         user = args[0]; /* Use the arg as the name to greet if provided */
       }
-      client.greet(user);
+      while(true){
+	//logger.info(user + "> ");
+        System.out.print(user + "> ");
+	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String message = br.readLine();
+	client.send(message);
+      }
     } finally {
       client.shutdown();
     }

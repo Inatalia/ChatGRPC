@@ -105,5 +105,11 @@ public class HelloWorldServer {
      responseObserver.onCompleted();
    }
 
+   @Override
+   public void sendMessage(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+     HelloReply reply = HelloReply.newBuilder().setMessage(req.getMessage()).build();
+     responseObserver.onNext(reply);
+     responseObserver.onCompleted();
+   }
   }
 }
