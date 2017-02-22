@@ -35,19 +35,22 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 /**
- * A simple client that requests a greeting from the {@link HelloWorldServer}.
+ * A simple client that requests a greeting from the {@link ChatServer}.
  */
 public class ChatClient {
   private static final Logger logger = Logger.getLogger(ChatClient.class.getName());
 
   private final ManagedChannel channel;
-  private final GreeterGrpc.GreeterBlockingStub blockingStub;
+  private final ChatterGrpc.ChatterBlockingStub blockingStub;
+  public static String messString = new String();
 
   /** Construct client connecting to HelloWorld server at {@code host:port}. */
   public ChatClient(String host, int port) {
@@ -56,40 +59,18 @@ public class ChatClient {
         // needing certificates.
         .usePlaintext(true)
         .build();
-    blockingStub = GreeterGrpc.newBlockingStub(channel);
+    blockingStub = ChatterGrpc.newBlockingStub(channel);
   }
 
   public void shutdown() throws InterruptedException {
     channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
   }
 
-  /** Say hello to server. */
-  public void greet(String name) {
-    logger.info("Will try to greet " + name + " ...");
-    HelloRequest request = HelloRequest.newBuilder().setName(name).build();
-    HelloReply response;
-    try {
-      response = blockingStub.sayHello(request);
-    } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
-    }
-    logger.info("Greeting: " + response.getMessage());
-    
-    try {
-      response = blockingStub.sayHelloAgain(request);
-    }   catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
-    }
-    logger.info("Greeting: " + response.getMessage());
-  }
-  
-  /** Say hello to server. */
+    /** Say hello to server. */
   public void send(String message) {
     //logger.info("Will try to greet " + name + " ...");
-    HelloRequest request = HelloRequest.newBuilder().setMessage(message).build();
-    HelloReply response;
+    ChatRequest request = ChatRequest.newBuilder().setMessage(message).build();
+    ChatReply response;
     try {
       response = blockingStub.sendMessage(request);
     } catch (StatusRuntimeException e) {
@@ -97,27 +78,50 @@ public class ChatClient {
       return;
     }
     logger.info("Server > " + response.getMessage());
-    
-    //try {
-    //  response = blockingStub.sayHelloAgain(request);
-    //}   catch (StatusRuntimeException e) {
-    //  logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-    //  return;
-    //}
-    //logger.info("Greeting: " + response.getMessage());
   }
-  
+
+    //Stub functions
+    public String createUsername(String name) {
+        mName req = mName.newBuilder().setName(name).build();
+        mString resp = blockingStub.createUsername(req);
+        return resp.getValue();
+    }
+
+    public boolean joinGroup(String name, String group) {
+        mNameGroup req = mNameGroup.newBuilder().setName(name).setGroup(group).build();
+        mBoolean resp = blockingStub.joinGroup(req);
+        return resp.getValue();
+    }
+
+    public boolean leaveGroup(String name, String group) {
+        mNameGroup req = mNameGroup.newBuilder().setName(name).setGroup(group).build();
+        mBoolean resp = blockingStub.leaveGroup(req);
+        return resp.getValue();
+    }
+
+    public boolean sendMessages(String name, String group, String message) {
+        mNameGroupMsg req = mNameGroupMsg.newBuilder().setName(name).setGroup(group).setMessage(message).build();
+        mBoolean resp = blockingStub.sendMessages(req);
+        return resp.getValue();
+    }
+
+    public String getMessage(String name) {
+        mName req = mName.newBuilder().setName(name).build();
+        mString resp = blockingStub.getMessage(req);
+        return resp.getValue();
+    }
+
   /**
    * Greet server. If provided, the first element of {@code args} is the name to use in the
    * greeting.
    */
   public static void main(String[] args) throws Exception {
-    ChatClient client = new ChatClient("localhost", 50051);
-    try {
-      /* Access a service running on the local machine on port 50051 */
+    final ChatClient client = new ChatClient("localhost", 50051);
+    /*try {
+      /* Access a service running on the local machine on port 50051 * /
       String user = "USER";
       if (args.length > 0) {
-        user = args[0]; /* Use the arg as the name to greet if provided */
+        user = args[0]; /* Use the arg as the name to greet if provided * /
       }
       while(true){
 	    //logger.info(user + "> ");
@@ -128,6 +132,96 @@ public class ChatClient {
       }
     } finally {
       client.shutdown();
-    }
+    }*/
+
+    final User u = new User();
+    Scanner sc = new Scanner(System.in);
+    String command = sc.nextLine();
+
+    Timer timer = new Timer();
+    TimerTask doAsynchronousTask = new TimerTask() {
+        @Override
+        public void run() {
+            if (!u.isEmpty())
+            {
+                messString =  client.getMessage(u.getName());
+                if (!messString.isEmpty()) {
+                    System.out.print(messString);
+                }
+            }
+        }
+    };
+    timer.schedule(doAsynchronousTask, 0, 1000); //execute in every 100 ms
+
+    //...
+      while (!command.equals("/EXIT")) {
+          if (command.contains("/USERNAME")) {
+              if (command.length() == 9) { //default username
+                  u.setName(client.createUsername(""));
+                  System.out.println("Successfully created nickname " + u.getName());
+              } else if (command.length() >= 11 && command.charAt(8) == ' ') {
+                  String name = client.createUsername(command.substring(10, command.length()));
+                  if (!name.equals("")) {
+                      u.setName(name);
+                      System.out.println("Successfully created nickname " + u.getName());
+                  } else {
+                      System.out.println("Name was taken. Choose another name");
+                  }
+
+              }
+          } else if (command.contains("/JOIN") && !u.isEmpty()) {
+              if (command.length() == 5) { //default username
+                  if (client.joinGroup(u.getName(), "channelname")) {
+                      u.addChannel("channelname");
+                      System.out.println("Successfully joined channelname");
+                  }
+              } else if (command.length() >= 7 && command.charAt(5) == ' ') {
+                  if (client.joinGroup(u.getName(), command.substring(6, command.length()))) {
+                      u.addChannel(command.substring(6, command.length()));
+                      System.out.println("Successfully joined " + command.substring(6, command.length()));
+                  } else {
+                      System.out.println("Join channel failed");
+                  }
+
+              }
+              else
+              {
+                  System.out.println("Wrong format");
+              }
+          } else if (command.contains("/LEAVE") && !u.isEmpty()) {
+              if (command.length() >= 8 && command.charAt(6) == ' ') {
+                  if (client.leaveGroup(u.getName(), command.substring(7, command.length()))) {
+                      u.removeChannel(command.substring(7, command.length()));
+                      System.out.println("Successfully left " + command.substring(7, command.length()));
+                  } else {
+                      System.out.println("Leave channel failed");
+                  }
+
+              }
+          }
+          else if (command.length() >= 4 && command.charAt(0) == ('@') && !u.isEmpty()) {
+              if (command.contains(" "))
+              {
+                  String channelname = command.substring(1,command.indexOf(' '));
+                  String message = command.substring(command.indexOf(' ')+1,command.length());
+                  if (!client.sendMessages(u.getName(),channelname,message))
+                  {
+                      System.out.println("No channel found");
+                  }
+              }
+              else
+              {
+                  System.out.println("You didn't type the message");
+              }
+          }
+          else if (!u.isEmpty()) {
+              client.sendMessages(u.getName(),"broadcast",command);
+          }
+          command = sc.nextLine();
+      }
+
+    timer.cancel();
+    timer.purge();
+    client.shutdown();
   }
 }

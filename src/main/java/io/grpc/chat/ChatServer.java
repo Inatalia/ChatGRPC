@@ -50,7 +50,7 @@ public class ChatServer {
 
   private void start() throws IOException {
     server = ServerBuilder.forPort(port)
-        .addService(new GreeterImpl())
+        .addService(new ChatterImpl())
         .build()
         .start();
     logger.info("Server started, listening on " + port);
@@ -89,27 +89,48 @@ public class ChatServer {
     server.blockUntilShutdown();
   }
 
-  private class GreeterImpl extends GreeterGrpc.GreeterImplBase {
-
+  private class ChatterImpl extends ChatterGrpc.ChatterImplBase {
     @Override
-    public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
-      HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+    public void sendMessage(ChatRequest req, StreamObserver<ChatReply> responseObserver) {
+      ChatReply reply = ChatReply.newBuilder().setMessage(req.getMessage()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
-	
-   @Override
-   public void sayHelloAgain(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
-     HelloReply reply = HelloReply.newBuilder().setMessage("Hello again " + req.getName()).build();
-     responseObserver.onNext(reply);
-     responseObserver.onCompleted();
-   }
 
-   @Override
-   public void sendMessage(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
-     HelloReply reply = HelloReply.newBuilder().setMessage(req.getMessage()).build();
-     responseObserver.onNext(reply);
-     responseObserver.onCompleted();
-   }
+    @Override
+    public void createUsername(mName request, StreamObserver<mString> responseObserver) {
+      mString reply = mString.newBuilder().setValue(request.getName()).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void joinGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
+      mBoolean resp = mBoolean.newBuilder().setValue(true).build();
+      responseObserver.onNext(resp);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void leaveGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
+      mBoolean resp = mBoolean.newBuilder().setValue(false).build();
+      responseObserver.onNext(resp);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void sendMessages(mNameGroupMsg request, StreamObserver<mBoolean> responseObserver) {
+      mBoolean resp = mBoolean.newBuilder().setValue(true).build();
+      responseObserver.onNext(resp);
+      responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getMessage(mName request, StreamObserver<mString> responseObserver) {
+      mString reply = mString.newBuilder().setValue(request.getName()).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
+
   }
 }

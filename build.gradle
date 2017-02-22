@@ -70,22 +70,22 @@ apply plugin: 'application'
 
 startScripts.enabled = false
 
-task helloWorldServer(type: CreateStartScripts) {
-  mainClassName = 'io.grpc.examples.helloworld.HelloWorldServer'
-  applicationName = 'hello-world-server'
+task chatServer(type: CreateStartScripts) {
+  mainClassName = 'io.grpc.chat.ChatServer'
+  applicationName = 'chat-server'
   outputDir = new File(project.buildDir, 'tmp')
   classpath = jar.outputs.files + project.configurations.runtime
 }
 
-task helloWorldClient(type: CreateStartScripts) {
-  mainClassName = 'io.grpc.examples.helloworld.HelloWorldClient'
-  applicationName = 'hello-world-client'
+task chatClient(type: CreateStartScripts) {
+  mainClassName = 'io.grpc.chat.ChatClient'
+  applicationName = 'chat-client'
   outputDir = new File(project.buildDir, 'tmp')
   classpath = jar.outputs.files + project.configurations.runtime
 }
 
 applicationDistribution.into('bin') {
-  from(helloWorldServer)
-  from(helloWorldClient)
+  from(chatServer)
+  from(chatClient)
   fileMode = 0755
 }

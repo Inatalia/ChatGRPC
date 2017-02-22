@@ -34,15 +34,16 @@ option java_package = "io.grpc.chat";
 option java_outer_classname = "ChatServiceProto";
 option objc_class_prefix = "HLW";
 
-package helloworld;
+package chat;
 
 // The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  //rpc SayHello (ChatRequest) returns (ChatReply) {}
-  //rpc SayHelloAgain (ChatRequest) returns (ChatReply) {}
+service Chatter {
+  rpc createUsername (mName) returns (mString) {}
   rpc SendMessage (ChatRequest) returns (ChatReply) {}
-
+  rpc joinGroup (mNameGroup) returns (mBoolean) {}
+  rpc leaveGroup (mNameGroup) returns (mBoolean) {}
+  rpc sendMessages (mNameGroupMsg) returns (mBoolean) {}
+  rpc getMessage (mName) returns (mString) {}
 }
 
 // The request message containing the user's name.
@@ -55,3 +56,27 @@ message ChatRequest {
 message ChatReply {
   string message = 1;
 }
+
+message mString {
+  string value = 1;
+}
+
+message mBoolean {
+  bool value = 1;
+}
+
+message mName {
+  string name = 1;
+}
+
+message mNameGroup {
+  string name = 1;
+  string group = 2;
+}
+
+message mNameGroupMsg {
+  string name = 1;
+  string group = 2;
+  string message = 3;
+}
+
