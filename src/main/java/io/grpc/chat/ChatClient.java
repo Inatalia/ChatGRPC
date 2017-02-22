@@ -29,34 +29,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package io.grpc.examples.helloworld;
+package io.grpc.chat;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
  */
-public class HelloWorldClient {
-  private static final Logger logger = Logger.getLogger(HelloWorldClient.class.getName());
+public class ChatClient {
+  private static final Logger logger = Logger.getLogger(ChatClient.class.getName());
 
   private final ManagedChannel channel;
   private final GreeterGrpc.GreeterBlockingStub blockingStub;
 
   /** Construct client connecting to HelloWorld server at {@code host:port}. */
-  public HelloWorldClient(String host, int port) {
+  public ChatClient(String host, int port) {
     channel = ManagedChannelBuilder.forAddress(host, port)
         // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
         // needing certificates.
@@ -118,7 +112,7 @@ public class HelloWorldClient {
    * greeting.
    */
   public static void main(String[] args) throws Exception {
-    HelloWorldClient client = new HelloWorldClient("localhost", 50051);
+    ChatClient client = new ChatClient("localhost", 50051);
     try {
       /* Access a service running on the local machine on port 50051 */
       String user = "USER";
@@ -126,11 +120,11 @@ public class HelloWorldClient {
         user = args[0]; /* Use the arg as the name to greet if provided */
       }
       while(true){
-	//logger.info(user + "> ");
+	    //logger.info(user + "> ");
         System.out.print(user + "> ");
-	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String message = br.readLine();
-	client.send(message);
+	    client.send(message);
       }
     } finally {
       client.shutdown();

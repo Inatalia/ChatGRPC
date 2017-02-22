@@ -29,33 +29,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package io.grpc.examples.header;
+package io.grpc.chat;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import io.grpc.ServerInterceptors;
-import io.grpc.examples.helloworld.GreeterGrpc;
-import io.grpc.examples.helloworld.HelloReply;
-import io.grpc.examples.helloworld.HelloRequest;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * A simple server that like {@link io.grpc.examples.helloworld.HelloWorldServer}.
- * You can get and response any header in {@link io.grpc.examples.header.HeaderServerInterceptor}.
+ * Server that manages startup/shutdown of a {@code Greeter} server.
  */
-public class CustomHeaderServer {
-  private static final Logger logger = Logger.getLogger(CustomHeaderServer.class.getName());
+public class ChatServer {
+  private static final Logger logger = Logger.getLogger(ChatServer.class.getName());
 
   /* The port on which the server should run */
-  private static final int port = 50051;
+  private int port = 50051;
   private Server server;
 
   private void start() throws IOException {
     server = ServerBuilder.forPort(port)
-        .addService(ServerInterceptors.intercept(new GreeterImpl(), new HeaderServerInterceptor()))
+        .addService(new GreeterImpl())
         .build()
         .start();
     logger.info("Server started, listening on " + port);
@@ -64,7 +59,7 @@ public class CustomHeaderServer {
       public void run() {
         // Use stderr here since the logger may have been reset by its JVM shutdown hook.
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
-        CustomHeaderServer.this.stop();
+        ChatServer.this.stop();
         System.err.println("*** server shut down");
       }
     });
@@ -89,12 +84,12 @@ public class CustomHeaderServer {
    * Main launches the server from the command line.
    */
   public static void main(String[] args) throws IOException, InterruptedException {
-    final CustomHeaderServer server = new CustomHeaderServer();
+    final ChatServer server = new ChatServer();
     server.start();
     server.blockUntilShutdown();
   }
 
-  private static class GreeterImpl extends GreeterGrpc.GreeterImplBase {
+  private class GreeterImpl extends GreeterGrpc.GreeterImplBase {
 
     @Override
     public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
@@ -102,5 +97,19 @@ public class CustomHeaderServer {
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
+	
+   @Override
+   public void sayHelloAgain(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+     HelloReply reply = HelloReply.newBuilder().setMessage("Hello again " + req.getName()).build();
+     responseObserver.onNext(reply);
+     responseObserver.onCompleted();
+   }
+
+   @Override
+   public void sendMessage(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+     HelloReply reply = HelloReply.newBuilder().setMessage(req.getMessage()).build();
+     responseObserver.onNext(reply);
+     responseObserver.onCompleted();
+   }
   }
 }
