@@ -153,75 +153,69 @@ public class ChatClient {
     };
     timer.schedule(doAsynchronousTask, 0, 1000); //execute in every 100 ms
 
-    //...
-      while (!command.equals("/EXIT")) {
-          if (command.contains("/USERNAME")) {
-              if (command.length() == 9) { //default username
-                  u.setName(client.createUsername(""));
-                  System.out.println("Successfully created nickname " + u.getName());
-              } else if (command.length() >= 11 && command.charAt(8) == ' ') {
-                  String name = client.createUsername(command.substring(10, command.length()));
-                  if (!name.equals("")) {
-                      u.setName(name);
-                      System.out.println("Successfully created nickname " + u.getName());
-                  } else {
-                      System.out.println("Name was taken. Choose another name");
-                  }
+    try {
+        while (!command.equals("/EXIT")) {
+            if (command.contains("/USERNAME")) {
+                if (command.length() == 9) { //default username
+                    u.setName(client.createUsername(""));
+                    System.out.println("Successfully created nickname " + u.getName());
+                } else if (command.length() >= 11 && command.charAt(8) == ' ') {
+                    String name = client.createUsername(command.substring(10, command.length()));
+                    if (!name.equals("")) {
+                        u.setName(name);
+                        System.out.println("Successfully created nickname " + u.getName());
+                    } else {
+                        System.out.println("Name was taken. Choose another name");
+                    }
 
-              }
-          } else if (command.contains("/JOIN") && !u.isEmpty()) {
-              if (command.length() == 5) { //default username
-                  if (client.joinGroup(u.getName(), "channelname")) {
-                      u.addChannel("channelname");
-                      System.out.println("Successfully joined channelname");
-                  }
-              } else if (command.length() >= 7 && command.charAt(5) == ' ') {
-                  if (client.joinGroup(u.getName(), command.substring(6, command.length()))) {
-                      u.addChannel(command.substring(6, command.length()));
-                      System.out.println("Successfully joined " + command.substring(6, command.length()));
-                  } else {
-                      System.out.println("Join channel failed");
-                  }
+                }
+            } else if (command.contains("/JOIN") && !u.isEmpty()) {
+                if (command.length() == 5) { //default username
+                    if (client.joinGroup(u.getName(), "channelname")) {
+                        u.addChannel("channelname");
+                        System.out.println("Successfully joined channelname");
+                    }
+                } else if (command.length() >= 7 && command.charAt(5) == ' ') {
+                    if (client.joinGroup(u.getName(), command.substring(6, command.length()))) {
+                        u.addChannel(command.substring(6, command.length()));
+                        System.out.println("Successfully joined " + command.substring(6, command.length()));
+                    } else {
+                        System.out.println("Join channel failed");
+                    }
 
-              }
-              else
-              {
-                  System.out.println("Wrong format");
-              }
-          } else if (command.contains("/LEAVE") && !u.isEmpty()) {
-              if (command.length() >= 8 && command.charAt(6) == ' ') {
-                  if (client.leaveGroup(u.getName(), command.substring(7, command.length()))) {
-                      u.removeChannel(command.substring(7, command.length()));
-                      System.out.println("Successfully left " + command.substring(7, command.length()));
-                  } else {
-                      System.out.println("Leave channel failed");
-                  }
+                } else {
+                    System.out.println("Wrong format");
+                }
+            } else if (command.contains("/LEAVE") && !u.isEmpty()) {
+                if (command.length() >= 8 && command.charAt(6) == ' ') {
+                    if (client.leaveGroup(u.getName(), command.substring(7, command.length()))) {
+                        u.removeChannel(command.substring(7, command.length()));
+                        System.out.println("Successfully left " + command.substring(7, command.length()));
+                    } else {
+                        System.out.println("Leave channel failed");
+                    }
 
-              }
-          }
-          else if (command.length() >= 4 && command.charAt(0) == ('@') && !u.isEmpty()) {
-              if (command.contains(" "))
-              {
-                  String channelname = command.substring(1,command.indexOf(' '));
-                  String message = command.substring(command.indexOf(' ')+1,command.length());
-                  if (!client.sendMessages(u.getName(),channelname,message))
-                  {
-                      System.out.println("No channel found");
-                  }
-              }
-              else
-              {
-                  System.out.println("You didn't type the message");
-              }
-          }
-          else if (!u.isEmpty()) {
-              client.sendMessages(u.getName(),"broadcast",command);
-          }
-          command = sc.nextLine();
-      }
-
-    timer.cancel();
-    timer.purge();
-    client.shutdown();
+                }
+            } else if (command.length() >= 4 && command.charAt(0) == ('@') && !u.isEmpty()) {
+                if (command.contains(" ")) {
+                    String channelname = command.substring(1, command.indexOf(' '));
+                    String message = command.substring(command.indexOf(' ') + 1, command.length());
+                    if (!client.sendMessages(u.getName(), channelname, message)) {
+                        System.out.println("No channel found");
+                    }
+                } else {
+                    System.out.println("You didn't type the message");
+                }
+            } else if (!u.isEmpty()) {
+                client.sendMessages(u.getName(), "broadcast", command);
+            }
+            command = sc.nextLine();
+        }
+    }
+    finally {
+        timer.cancel();
+        timer.purge();
+        client.shutdown();
+    }
   }
 }
