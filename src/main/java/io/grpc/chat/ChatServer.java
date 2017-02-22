@@ -152,9 +152,11 @@ public class ChatServer {
           finalName = name;
         }
       }
-
-      mString reply = mString.newBuilder().setValue(request.getName()).build();
-      responseObserver.onNext(reply);
+      activeUsers.add(finalName);
+      currentUser.setName(finalName);
+      broadcastChannels.add(new User(finalName));
+      mString fn = mString.newBuilder().setValue(finalName).build();
+      responseObserver.onNext(fn);
       responseObserver.onCompleted();
     }
 
@@ -196,6 +198,35 @@ public class ChatServer {
 
     @Override
     public void leaveGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
+      String name = request.getName();
+      String channel = request.getGroup();
+      if (name.isEmpty() || channel.isEmpty()) {
+        mBoolean resp = mBoolean.newBuilder().setValue(false).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
+        return;
+      }
+      System.out.println("calling leave from " + name);
+      int i = 0;
+      while (i < activeChannels.size()) {
+        if (activeChannels.get(i).getName().compareToIgnoreCase(channel) == 0) {
+          System.out.println("> "+ activeChannels.get(i).getName());
+          for(int j=0; j<currentUser.getMyChannels().size(); j++) {
+            System.out.println(currentUser.getMyChannels().get(j));
+          }
+          activeChannels.get(i).removeActiveUser(name);
+          currentUser.removeChannel(channel);
+          System.out.println(name + " successfully left " + channel);
+          mBoolean resp = mBoolean.newBuilder().setValue(true).build();
+          responseObserver.onNext(resp);
+          responseObserver.onCompleted();
+          return;
+        } else {
+          i++;
+        }
+      }
+      System.out.println("Channel not found");
+
       mBoolean resp = mBoolean.newBuilder().setValue(false).build();
       responseObserver.onNext(resp);
       responseObserver.onCompleted();
@@ -203,6 +234,36 @@ public class ChatServer {
 
     @Override
     public void sendMessages(mNameGroupMsg request, StreamObserver<mBoolean> responseObserver) {
+      String name = request.getName();
+      String channel = request.getGroup();
+      String message = request.getMessage();
+      String mesString = new String("[" + channel + "] " + "(" + name + ") " + message);
+      System.out.println(name + " sending " + message + " to " + channel);
+      int i = 0;
+      boolean foundChannel = false;
+      System.out.println("channel msg " + channel);
+      if (!channel.equals("broadcast")) {
+        while (i < activeChannels.size() && !foundChannel) {
+          if (activeChannels.get(i).getName().equals(channel)) {
+            foundChannel = true;
+            for (int j = 0; j < activeChannels.get(i).activeUser.size(); j++) {
+              activeChannels.get(i).activeUser.get(j).addMessage(mesString);
+            }
+          }
+          i++;
+        }
+        mBoolean resp = mBoolean.newBuilder().setValue(foundChannel).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
+      } else {
+        System.out.println("broadcast channels: " + broadcastChannels.size());
+        for (int j = 0; j < broadcastChannels.size(); j++) {
+          System.out.println("broadcast msg " + mesString);
+          broadcastChannels.get(j).addMessage(mesString);
+        }
+        if(broadcastChannels.isEmpty())
+          System.out.println("broadcast msg " + mesString);
+      }
       mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
       responseObserver.onCompleted();
@@ -210,7 +271,27 @@ public class ChatServer {
 
     @Override
     public void getMessage(mName request, StreamObserver<mString> responseObserver) {
-      mString reply = mString.newBuilder().setValue(request.getName()).build();
+      String name = request.getName();
+      StringBuilder msgBuilder = new StringBuilder();
+      for (int i = 0; i < activeChannels.size(); i++) {
+        for (int j = 0; j < activeChannels.get(i).activeUser.size(); j++) {
+          if (activeChannels.get(i).activeUser.get(j).getName().equals(name)) {
+            if (!activeChannels.get(i).activeUser.get(j).getMessQueue().isEmpty()) {
+              msgBuilder.append(activeChannels.get(i).activeUser.get(j).getAllMessage());
+            }
+          }
+        }
+      }
+      for (int j = 0; j < broadcastChannels.size(); j++) {
+        if (broadcastChannels.get(j).getName().equals(name)) {
+          //                    System.out.println("broad = "+broadcastChannels.get(j).getAllMessage());
+          if (!broadcastChannels.get(j).getMessQueue().isEmpty()) {
+            //                    System.out.println("broad = "+broadcastChannels.get(j).getAllMessage());
+            msgBuilder.append(broadcastChannels.get(j).getAllMessage());
+          }
+        }
+      }
+      mString reply = mString.newBuilder().setValue(msgBuilder.toString()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }

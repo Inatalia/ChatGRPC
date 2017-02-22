@@ -82,8 +82,16 @@ public class ChatClient {
 
     //Stub functions
     public String createUsername(String name) {
-        mName req = mName.newBuilder().setName(name).build();
-        mString resp = blockingStub.createUsername(req);
+        mName req;
+        mString resp;
+        try {
+            req = mName.newBuilder().setName(name).build();
+            resp = blockingStub.createUsername(req);
+        } catch (StatusRuntimeException e) {
+            logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+            return e.getStatus().toString();
+        }
+
         return resp.getValue();
     }
 
@@ -156,20 +164,16 @@ public class ChatClient {
     try {
         while (!command.equals("/EXIT")) {
             if (command.contains("/USERNAME")) {
-                if (command.length() == 9) { //default username
+                String[] format = command.split(" ");
+                if(format.length < 1 || format[1].isEmpty()){
                     u.setName(client.createUsername(""));
                     System.out.println("Successfully created nickname " + u.getName());
-                } else if (command.length() >= 11 && command.charAt(8) == ' ') {
-                    String name = client.createUsername(command.substring(10, command.length()));
-                    if (!name.equals("")) {
-                        u.setName(name);
-                        System.out.println("Successfully created nickname " + u.getName());
-                    } else {
-                        System.out.println("Name was taken. Choose another name");
-                    }
-
                 }
-            } else if (command.contains("/JOIN") && !u.isEmpty()) {
+                else {
+                    u.setName(client.createUsername(format[1]));
+                    System.out.println("Successfully created nickname " + u.getName());
+                }
+            } /*else if (command.contains("/JOIN") && !u.isEmpty()) {
                 if (command.length() == 5) { //default username
                     if (client.joinGroup(u.getName(), "channelname")) {
                         u.addChannel("channelname");
@@ -206,8 +210,9 @@ public class ChatClient {
                 } else {
                     System.out.println("You didn't type the message");
                 }
-            } else if (!u.isEmpty()) {
+            }*/ else if (!u.isEmpty()) {
                 client.sendMessages(u.getName(), "broadcast", command);
+                System.out.println(u.getName() + " > " + client.getMessage(u.getName()));
             }
             command = sc.nextLine();
         }
