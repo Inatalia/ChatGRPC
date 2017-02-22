@@ -37,6 +37,10 @@ import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Server that manages startup/shutdown of a {@code Greeter} server.
@@ -90,6 +94,32 @@ public class ChatServer {
   }
 
   private class ChatterImpl extends ChatterGrpc.ChatterImplBase {
+    public List<String> defaultUsernames;
+    public List<String> activeUsers;
+    public List<Channel> activeChannels;
+    public List<User> broadcastChannels;
+    public User currentUser;
+
+    public ChatterImpl() {
+      defaultUsernames = new ArrayList<String>(
+              Arrays.asList("A", "B", "C", "D", "E")
+      );
+      activeUsers = new ArrayList<String>();
+      activeChannels = new ArrayList<Channel>();
+      currentUser = new User();
+      broadcastChannels = new ArrayList<User>();
+    }
+
+    //Utility functions
+    private boolean isUsernameExists(String name) {
+      for (int i = 0; i < activeUsers.size(); i++) {
+        if (name.equals(activeUsers.get(i))) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     @Override
     public void sendMessage(ChatRequest req, StreamObserver<ChatReply> responseObserver) {
       ChatReply reply = ChatReply.newBuilder().setMessage(req.getMessage()).build();
@@ -99,6 +129,30 @@ public class ChatServer {
 
     @Override
     public void createUsername(mName request, StreamObserver<mString> responseObserver) {
+      String name = request.getName();
+      String finalname = "";
+      System.out.println("calling username from " + name);
+      String finalName = "";
+      if (name.equals("")) { //kasus random username, diasumsikan masih ada nama yang tersedia
+        int rndIdx = new Random().nextInt((defaultUsernames.size() - 0));
+        String potentialName = defaultUsernames.get(rndIdx);
+        while (isUsernameExists(potentialName)) {
+          rndIdx = new Random().nextInt((defaultUsernames.size() - 0));
+          potentialName = defaultUsernames.get(rndIdx);
+        }
+        defaultUsernames.remove(rndIdx);
+        finalName = potentialName;
+      } else {
+        if (isUsernameExists(name)) {
+          mString fn = mString.newBuilder().setValue(finalName).build();
+          responseObserver.onNext(fn);
+          responseObserver.onCompleted();
+          return;
+        } else {
+          finalName = name;
+        }
+      }
+
       mString reply = mString.newBuilder().setValue(request.getName()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
@@ -106,6 +160,35 @@ public class ChatServer {
 
     @Override
     public void joinGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
+      if (request.getName().isEmpty() || request.getGroup().isEmpty()) {
+        mBoolean resp = mBoolean.newBuilder().setValue(false).build();
+        responseObserver.onNext(resp);
+        responseObserver.onCompleted();
+        return;
+      }
+      String name = request.getName();
+      String channel = request.getGroup();
+      System.out.println("calling join from " + name);
+      int i = 0;
+      while (i < activeChannels.size()) {
+        if (activeChannels.get(i).getName().compareToIgnoreCase(channel) == 0) {
+          System.out.println(name + " successfully joined " + channel);
+          activeChannels.get(i).addActiveUser(name);
+          currentUser.addChannel(channel);
+          mBoolean resp = mBoolean.newBuilder().setValue(true).build();
+          responseObserver.onNext(resp);
+          responseObserver.onCompleted();
+          return;
+        } else {
+          i++;
+        }
+      }
+      Channel c = new Channel(channel);
+      c.addActiveUser(name);
+      activeChannels.add(c);
+      currentUser.addChannel(channel);
+      System.out.println(name + " successfully joined " + channel);
+
       mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
       responseObserver.onCompleted();
