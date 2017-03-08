@@ -1,38 +1,29 @@
-grpc Examples
+grpc ChatApplication
 ==============================================
 
-The examples require grpc-java to already be built. You are strongly encouraged
-to check out a git release tag, since there will already be a build of grpc
-available. Otherwise you must follow [COMPILING](../COMPILING.md).
-
-To build the examples, run in this directory:
+To build the chat, run in this directory:
 
 ```
 $ ./gradlew installDist
 ```
 
-This creates the scripts `hello-world-server`, `hello-world-client`,
-`route-guide-server`, and `route-guide-client` in the
-`build/install/examples/bin/` directory that run the examples. Each
-example requires the server to be running before starting the client.
+This creates the scripts `char-server`, `chat-client`, 
+in the `build/install/chat/bin/` directory that run the chat. Each
+chat requires the server to be running before starting the client.
 
-For example, to try the hello world example first run:
+To run the server:
 
 ```
-$ ./build/install/examples/bin/hello-world-server
+$ ./build/install/chat/bin/chat-server
 ```
 
 And in a different terminal window run:
 
 ```
-$ ./build/install/examples/bin/hello-world-client
+$ ./build/install/chat/bin/chat-client
 ```
 
 That's it!
-
-Please refer to gRPC Java's [README](../README.md) and
-[tutorial](http://www.grpc.io/docs/tutorials/basic/java.html) for more
-information.
 
 ## Maven
 
@@ -40,7 +31,7 @@ If you prefer to use Maven:
 ```
 $ mvn verify
 $ # Run the server
-$ mvn exec:java -Dexec.mainClass=io.grpc.examples.helloworld.HelloWorldServer
+$ mvn exec:java -Dexec.mainClass=io.grpc.chat.ClientServer
 $ # In another terminal run the client
-$ mvn exec:java -Dexec.mainClass=io.grpc.examples.helloworld.HelloWorldClient
+$ mvn exec:java -Dexec.mainClass=io.grpc.chat.ClientClient
 ```

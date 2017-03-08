@@ -1,4 +1,5 @@
 package io.grpc.chat;
+import com.google.protobuf.ByteString; 
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,31 +7,48 @@ import java.util.List;
  * Created by irenenatalia on 2/21/17.
  */
 public class User {
+
     private String name;
     private List<String> myChannels;
     private List<String> messQueue;
+    //private List<String> fileQueue;
+    private List<ByteString> fileQueue;
 
+    //public List<String> getFileQueue() {
+    public List<ByteString> getFileQueue() {
+        return fileQueue;
+    }
     public List<String> getMessQueue() {
         return messQueue;
     }
 
-    public void setMessQueue(List<String> messQueue) {
+    //public void setMessQueue(List<String> messQueue, List<String> fileQueue) {
+    public void setMessQueue(List<String> messQueue, List<ByteString> fileQueue) {
         this.messQueue = messQueue;
+        this.fileQueue = fileQueue;
     }
 
     public User(String name) {
         this.name = name;
         this.myChannels = new ArrayList<String>();
         messQueue = new ArrayList<String>();
+        //fileQueue = new ArrayList<String>();
+        fileQueue = new ArrayList<ByteString>();
     }
 
     public User() {
         this.name = "";
         this.myChannels = new ArrayList<String>();
         messQueue = new ArrayList<String>();
+        //fileQueue = new ArrayList<String>();
+        fileQueue = new ArrayList<ByteString>();
     }
 
     public String getName() {
+        return name;
+    }
+
+    public String toString() { 
         return name;
     }
 
@@ -58,10 +76,22 @@ public class User {
     {
         return this.name.isEmpty();
     }
+    //public void addFile(String file)
+    public void addFile(ByteString file)
+    {
+        fileQueue.add(file);
+    }
+    //public String getFile(int index){
+    public ByteString getFile(int index){
+        return fileQueue.remove(index);
+    }
+    //public String getFirstFile()
+    public ByteString getFirstFile()
+    {
+        return fileQueue.remove(0);
+    }
     public void addMessage(String message)
     {
-//        System.out.println("User = "+message);
-        //channelname - nickname - content
         messQueue.add(message);
     }
     public String getAllMessage()

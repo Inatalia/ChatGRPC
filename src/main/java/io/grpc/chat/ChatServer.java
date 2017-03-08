@@ -1,32 +1,7 @@
 /*
- * Copyright 2015, Google Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *    * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *    * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *
- *    * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Author: Irene Hardjono 
+ * Date: 03/01/2017
+ * ChatServer.java
  */
 
 package io.grpc.chat;
@@ -34,6 +9,7 @@ package io.grpc.chat;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import com.google.protobuf.ByteString; 
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -96,7 +72,6 @@ public class ChatServer {
   private class ChatterImpl extends ChatterGrpc.ChatterImplBase {
     public List<String> defaultUsernames;
     public List<String> activeUsers;
-    public List<Channel> activeChannels;
     public List<User> broadcastChannels;
     public User currentUser;
 
@@ -105,7 +80,6 @@ public class ChatServer {
               Arrays.asList("A", "B", "C", "D", "E")
       );
       activeUsers = new ArrayList<String>();
-      activeChannels = new ArrayList<Channel>();
       currentUser = new User();
       broadcastChannels = new ArrayList<User>();
     }
@@ -121,19 +95,13 @@ public class ChatServer {
     }
 
     @Override
-    public void sendMessage(ChatRequest req, StreamObserver<ChatReply> responseObserver) {
-      ChatReply reply = ChatReply.newBuilder().setMessage(req.getMessage()).build();
-      responseObserver.onNext(reply);
-      responseObserver.onCompleted();
-    }
-
-    @Override
     public void createUsername(mName request, StreamObserver<mString> responseObserver) {
       String name = request.getName();
       String finalname = "";
-      System.out.println("calling username from " + name);
+      System.out.println("created username from " + name);
       String finalName = "";
-      if (name.equals("")) { //kasus random username, diasumsikan masih ada nama yang tersedia
+      
+      if (name.equals("")) { 
         int rndIdx = new Random().nextInt((defaultUsernames.size() - 0));
         String potentialName = defaultUsernames.get(rndIdx);
         while (isUsernameExists(potentialName)) {
@@ -159,37 +127,12 @@ public class ChatServer {
       responseObserver.onNext(fn);
       responseObserver.onCompleted();
     }
-
+    
     @Override
-    public void joinGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
-      if (request.getName().isEmpty() || request.getGroup().isEmpty()) {
-        mBoolean resp = mBoolean.newBuilder().setValue(false).build();
-        responseObserver.onNext(resp);
-        responseObserver.onCompleted();
-        return;
-      }
+    public void removeUsername(mName request, StreamObserver<mBoolean> responseObserver) {
       String name = request.getName();
-      String channel = request.getGroup();
-      System.out.println("calling join from " + name);
-      int i = 0;
-      while (i < activeChannels.size()) {
-        if (activeChannels.get(i).getName().compareToIgnoreCase(channel) == 0) {
-          System.out.println(name + " successfully joined " + channel);
-          activeChannels.get(i).addActiveUser(name);
-          currentUser.addChannel(channel);
-          mBoolean resp = mBoolean.newBuilder().setValue(true).build();
-          responseObserver.onNext(resp);
-          responseObserver.onCompleted();
-          return;
-        } else {
-          i++;
-        }
-      }
-      Channel c = new Channel(channel);
-      c.addActiveUser(name);
-      activeChannels.add(c);
-      currentUser.addChannel(channel);
-      System.out.println(name + " successfully joined " + channel);
+      activeUsers.remove(name);
+      broadcastChannels.remove(new User(name));
 
       mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
@@ -197,72 +140,59 @@ public class ChatServer {
     }
 
     @Override
-    public void leaveGroup(mNameGroup request, StreamObserver<mBoolean> responseObserver) {
+    public void sendFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
+    //@Override
+    //public void sendFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
       String name = request.getName();
-      String channel = request.getGroup();
-      if (name.isEmpty() || channel.isEmpty()) {
-        mBoolean resp = mBoolean.newBuilder().setValue(false).build();
-        responseObserver.onNext(resp);
-        responseObserver.onCompleted();
-        return;
-      }
-      System.out.println("calling leave from " + name);
+      //String file = request.getFile();
+	  ByteString file = request.getFile();
+      //System.out.println("received size of file is " + file);
+      System.out.println("sent size of file is " + file.size());
       int i = 0;
-      while (i < activeChannels.size()) {
-        if (activeChannels.get(i).getName().compareToIgnoreCase(channel) == 0) {
-          System.out.println("> "+ activeChannels.get(i).getName());
-          for(int j=0; j<currentUser.getMyChannels().size(); j++) {
-            System.out.println(currentUser.getMyChannels().get(j));
-          }
-          activeChannels.get(i).removeActiveUser(name);
-          currentUser.removeChannel(channel);
-          System.out.println(name + " successfully left " + channel);
-          mBoolean resp = mBoolean.newBuilder().setValue(true).build();
-          responseObserver.onNext(resp);
-          responseObserver.onCompleted();
-          return;
-        } else {
-          i++;
-        }
+      for (int j = 0; j < broadcastChannels.size(); j++) {
+        broadcastChannels.get(j).addFile(file);
       }
-      System.out.println("Channel not found");
-
-      mBoolean resp = mBoolean.newBuilder().setValue(false).build();
+      mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
       responseObserver.onCompleted();
     }
 
     @Override
+	public void getFile(mName request, StreamObserver<mByte> responseObserver) {
+    //public void getFile(mName request, StreamObserver<mString> responseObserver) {
+      String name = request.getName();
+      //System.out.println("getFile...");
+      //String fileByteString = "";
+	  ByteString fileByteString = null;
+      for (int j = 0; j < broadcastChannels.size(); j++) {
+        if (broadcastChannels.get(j).getName().equals(name)) {
+          List<ByteString> listFileByteString = broadcastChannels.get(j).getFileQueue();
+          //List<String> listFileByteString = broadcastChannels.get(j).getFileQueue();
+          if (!listFileByteString.isEmpty()) {
+            fileByteString = broadcastChannels.get(j).getFirstFile();
+            System.out.println("file size is " + fileByteString.size());
+          }
+        }
+      } 
+      mByte reply = mByte.newBuilder().setValue(fileByteString).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+      //mString reply = mString.newBuilder().setValue(fileByteString).build();
+      //responseObserver.onNext(reply);
+      //responseObserver.onCompleted();
+    }
+  
+    @Override
     public void sendMessages(mNameGroupMsg request, StreamObserver<mBoolean> responseObserver) {
       String name = request.getName();
       String channel = request.getGroup();
       String message = request.getMessage();
-      String mesString = new String("[" + channel + "] " + "(" + name + ") " + message);
-      System.out.println(name + " sending " + message + " to " + channel);
+      String mesString = new String("(Message from " + name + " > " + message + ")");
       int i = 0;
-      boolean foundChannel = false;
-      System.out.println("channel msg " + channel);
-      if (!channel.equals("broadcast")) {
-        while (i < activeChannels.size() && !foundChannel) {
-          if (activeChannels.get(i).getName().equals(channel)) {
-            foundChannel = true;
-            for (int j = 0; j < activeChannels.get(i).activeUser.size(); j++) {
-              activeChannels.get(i).activeUser.get(j).addMessage(mesString);
-            }
-          }
-          i++;
-        }
-        mBoolean resp = mBoolean.newBuilder().setValue(foundChannel).build();
-        responseObserver.onNext(resp);
-        responseObserver.onCompleted();
-      } else {
-        System.out.println("broadcast channels: " + broadcastChannels.size());
-        for (int j = 0; j < broadcastChannels.size(); j++) {
-          System.out.println("broadcast msg " + mesString);
+      System.out.println("Active users: " + broadcastChannels.size());
+      for (int j = 0; j < broadcastChannels.size(); j++) {
+          System.out.println("send msg " + mesString);
           broadcastChannels.get(j).addMessage(mesString);
-        }
-        if(broadcastChannels.isEmpty())
-          System.out.println("broadcast msg " + mesString);
       }
       mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
@@ -273,20 +203,10 @@ public class ChatServer {
     public void getMessage(mName request, StreamObserver<mString> responseObserver) {
       String name = request.getName();
       StringBuilder msgBuilder = new StringBuilder();
-      for (int i = 0; i < activeChannels.size(); i++) {
-        for (int j = 0; j < activeChannels.get(i).activeUser.size(); j++) {
-          if (activeChannels.get(i).activeUser.get(j).getName().equals(name)) {
-            if (!activeChannels.get(i).activeUser.get(j).getMessQueue().isEmpty()) {
-              msgBuilder.append(activeChannels.get(i).activeUser.get(j).getAllMessage());
-            }
-          }
-        }
-      }
+      //System.out.println("getMessage...");
       for (int j = 0; j < broadcastChannels.size(); j++) {
         if (broadcastChannels.get(j).getName().equals(name)) {
-          //                    System.out.println("broad = "+broadcastChannels.get(j).getAllMessage());
           if (!broadcastChannels.get(j).getMessQueue().isEmpty()) {
-            //                    System.out.println("broad = "+broadcastChannels.get(j).getAllMessage());
             msgBuilder.append(broadcastChannels.get(j).getAllMessage());
           }
         }
@@ -295,6 +215,5 @@ public class ChatServer {
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
-
   }
 }
