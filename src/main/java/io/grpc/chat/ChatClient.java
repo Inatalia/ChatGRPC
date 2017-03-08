@@ -142,25 +142,29 @@ public class ChatClient {
        		}
        	});
       	if(isUnknown) {
-          System.out.println("Please enter your username: ");
+          System.out.print("Please enter your username: ");
        		u.setName(client.createUsername(sc.nextLine()));
        		if(!u.getName().isEmpty()) {
             System.out.println("Successfully created nickname " + u.getName());	  														
           }
        		isUnknown = false;
-      	} else if(command.contains("/upload")) {
+      	} else if(command.startsWith("/upload")) {
           	byte[] fileInBytes = new byte[8000];
           	try {
-            	String filename = command.split(" ")[1].trim();
-            	//System.out.println("file is " + filename);
-            	fileInBytes = Files.readAllBytes(Paths.get(filename));
-							
-            	ByteString byteString = ByteString.copyFrom(fileInBytes);
-            	System.out.println(u.getName() + " > uploading " + filename + " size of " 
-								+ byteString.size());
-            	client.sendFiles(u.getName(), byteString);
-            	client.sendMessages(u.getName(), "broadcast", "Sending a file with a size of " 
-								+ client.getFile(u.getName()).size());
+            	String filename = command.substring(command.indexOf(" ") + 1, command.length()).trim();
+            	//String filename = command.split(" ")[1].trim();
+            	//System.out.println("filename is " + filename);
+              if(filename.isEmpty() || !command.contains(" ")){
+            	  System.err.println("Error Locating file -- check path or filename. Format is /upload [filename]");
+              } else {
+            	  fileInBytes = Files.readAllBytes(Paths.get(filename));
+            	  ByteString byteString = ByteString.copyFrom(fileInBytes);
+            	  System.out.println(u.getName() + " > uploading " + filename + " size of " 
+								  + byteString.size());
+            	  client.sendFiles(u.getName(), byteString);
+            	  client.sendMessages(u.getName(), "broadcast", "Sending a file with a size of " 
+								  + client.getFile(u.getName()).size());
+              }
           	} catch (IOException e) {
             	System.err.println(e);
             	System.err.println("Error Locating file -- check path.");
