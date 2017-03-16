@@ -141,12 +141,8 @@ public class ChatServer {
 
     @Override
     public void sendFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
-    //@Override
-    //public void sendFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
       String name = request.getName();
-      //String file = request.getFile();
-	  ByteString file = request.getFile();
-      //System.out.println("received size of file is " + file);
+	  	ByteString file = request.getFile();
       System.out.println("sent size of file is " + file.size());
       int i = 0;
       for (int j = 0; j < broadcastChannels.size(); j++) {
@@ -158,16 +154,12 @@ public class ChatServer {
     }
 
     @Override
-	public void getFile(mName request, StreamObserver<mByte> responseObserver) {
-    //public void getFile(mName request, StreamObserver<mString> responseObserver) {
+	  public void getFile(mName request, StreamObserver<mByte> responseObserver) {
       String name = request.getName();
-      //System.out.println("getFile...");
-      //String fileByteString = "";
-	  ByteString fileByteString = null;
+	  	ByteString fileByteString = null;
       for (int j = 0; j < broadcastChannels.size(); j++) {
         if (broadcastChannels.get(j).getName().equals(name)) {
           List<ByteString> listFileByteString = broadcastChannels.get(j).getFileQueue();
-          //List<String> listFileByteString = broadcastChannels.get(j).getFileQueue();
           if (!listFileByteString.isEmpty()) {
             fileByteString = broadcastChannels.get(j).getFirstFile();
             System.out.println("file size is " + fileByteString.size());
@@ -177,11 +169,16 @@ public class ChatServer {
       mByte reply = mByte.newBuilder().setValue(fileByteString).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
-      //mString reply = mString.newBuilder().setValue(fileByteString).build();
-      //responseObserver.onNext(reply);
-      //responseObserver.onCompleted();
     }
   
+    /*@Override
+    public void sendBigFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
+      //....? 
+      mBoolean resp = mBoolean.newBuilder().setValue(true).build();
+      responseObserver.onNext(resp);
+      responseObserver.onCompleted();
+    }*/
+
     @Override
     public void sendMessages(mNameGroupMsg request, StreamObserver<mBoolean> responseObserver) {
       String name = request.getName();
@@ -203,7 +200,6 @@ public class ChatServer {
     public void getMessage(mName request, StreamObserver<mString> responseObserver) {
       String name = request.getName();
       StringBuilder msgBuilder = new StringBuilder();
-      //System.out.println("getMessage...");
       for (int j = 0; j < broadcastChannels.size(); j++) {
         if (broadcastChannels.get(j).getName().equals(name)) {
           if (!broadcastChannels.get(j).getMessQueue().isEmpty()) {

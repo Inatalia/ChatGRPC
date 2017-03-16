@@ -14,8 +14,9 @@ service Chatter {
   rpc sendMessages (mNameGroupMsg) returns (mBoolean) {}
   rpc getMessage (mName) returns (mString) {}
   rpc sendFiles (mNameFile) returns (mBoolean) {}
-  //rpc getFile (mName) returns (mString) {}
+  rpc sendBigFiles (stream requestFile) returns (mBoolean) {}
   rpc getFile (mName) returns (mByte) {}
+  //rpc getBigFile (mName) returns (stream requestFile) {}
 }
 
 message mString {
@@ -41,7 +42,6 @@ message mNameGroup {
 
 message mNameFile {
   string name = 1;
-  //string file = 2;
   bytes file = 2;
 }
 
@@ -49,6 +49,19 @@ message mNameGroupMsg {
   string name = 1;
   string group = 2;
   string message = 3;
-  //bytes file = 4;
+}
+
+message requestFile {
+  message Key {
+    string name = 1;
+  }
+  message Chunk {
+    bytes data = 1;
+    int64 position = 2;
+  }
+  oneof value {
+    Key key = 1;
+    Chunk chunk = 2;
+  }
 }
 

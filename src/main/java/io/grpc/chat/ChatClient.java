@@ -80,21 +80,36 @@ public class ChatClient {
 	}
 
   public boolean sendFiles(String name, ByteString byteFile) {
-  //public boolean sendFiles(String name, String byteFile) {
-		mNameFile req = mNameFile.newBuilder().setName(name).setFile(byteFile).build();
-		mBoolean resp = blockingStub.sendFiles(req);
+    mNameFile req;
+    mBoolean resp;
+    try {
+      req = mNameFile.newBuilder().setName(name).setFile(byteFile).build();
+		  resp = blockingStub.sendFiles(req);
+		} catch (StatusRuntimeException e) {
+      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      return false;
+    }
 		return resp.getValue();
 	}
 
-  //public String getFile(String name) {
   public ByteString getFile(String name) {
     mName req = mName.newBuilder().setName(name).build();
     mByte resp = blockingStub.getFile(req);
-    //mString resp = blockingStub.getFile(req);
     return resp.getValue();
   }
 
-
+  /*public boolean sendBigFiles(String name, ByteString byteFile) {
+    mNameFile req;
+    mBoolean resp;
+    try {
+      req = mNameFile.newBuilder().setName(name).setFile(byteFile).build();
+		  resp = blockingStub.sendBigFiles(req);
+		} catch (StatusRuntimeException e) {
+      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
+      return false;
+    }
+		return resp.getValue();
+	}*/
 
 	/**
 	* Chat server. If provided, the first element of {@code args} is the name to use in the
@@ -118,16 +133,10 @@ public class ChatClient {
         if (!u.isEmpty())
         {
           messString =  client.getMessage(u.getName());
-          //String fileString = client.getFile(u.getName());
-          //ByteString fileString = client.getFile(u.getName());
           if (!messString.isEmpty()){
             System.out.print(messString);
             System.out.print(u.getName() + " > ");
-          } /*else if(!fileString.isEmpty()) {
-            System.out.println("(received a file with size of " + fileString.size() + ")");
-            //System.out.println("(Getting file of " + fileString + ")");
-            System.out.print(u.getName() + " > ");
-          }*/
+          }
 				}
 			}
 	};
@@ -149,10 +158,9 @@ public class ChatClient {
           }
        		isUnknown = false;
       	} else if(command.startsWith("/upload")) {
-          	byte[] fileInBytes = new byte[8000];
+          	byte[] fileInBytes;// = new byte[];
           	try {
             	String filename = command.substring(command.indexOf(" ") + 1, command.length()).trim();
-            	//String filename = command.split(" ")[1].trim();
             	//System.out.println("filename is " + filename);
               if(filename.isEmpty() || !command.contains(" ")){
             	  System.err.println("Error Locating file -- check path or filename. Format is /upload [filename]");
