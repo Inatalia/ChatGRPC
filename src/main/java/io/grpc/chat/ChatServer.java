@@ -171,13 +171,13 @@ public class ChatServer {
       responseObserver.onCompleted();
     }
   
-    /*@Override
+    @Override
     public void sendBigFiles(mNameFile request, StreamObserver<mBoolean> responseObserver) {
       //....? 
       mBoolean resp = mBoolean.newBuilder().setValue(true).build();
       responseObserver.onNext(resp);
       responseObserver.onCompleted();
-    }*/
+    }
 
     @Override
     public void sendMessages(mNameGroupMsg request, StreamObserver<mBoolean> responseObserver) {

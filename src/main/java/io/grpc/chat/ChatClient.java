@@ -98,7 +98,7 @@ public class ChatClient {
     return resp.getValue();
   }
 
-  /*public boolean sendBigFiles(String name, ByteString byteFile) {
+  public boolean sendBigFiles(String name, ByteString byteFile) {
     mNameFile req;
     mBoolean resp;
     try {
@@ -109,7 +109,7 @@ public class ChatClient {
       return false;
     }
 		return resp.getValue();
-	}*/
+	}
 
 	/**
 	* Chat server. If provided, the first element of {@code args} is the name to use in the
